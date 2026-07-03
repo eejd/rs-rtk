@@ -2192,8 +2192,8 @@ match_command = "^make\\b"
         let filters = make_filters(BUILTIN_TOML);
         assert_eq!(
             filters.len(),
-            62,
-            "Expected exactly 62 built-in filters, got {}. \
+            66,
+            "Expected exactly 66 built-in filters, got {}. \
              Update this count when adding/removing filters in src/filters/.",
             filters.len()
         );
