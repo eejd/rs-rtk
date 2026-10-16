@@ -2301,11 +2301,11 @@ expected = "output line 1\noutput line 2"
         let combined = format!("{}\n\n{}", BUILTIN_TOML, new_filter);
         let filters = make_filters(&combined);
 
-        // All 62 existing filters still present + 1 new = 63
+        // All 66 existing filters still present + 1 new = 67
         assert_eq!(
             filters.len(),
-            63,
-            "Expected 63 filters after concat (62 built-in + 1 new)"
+            67,
+            "Expected 67 filters after concat (66 built-in + 1 new)"
         );
 
         // New filter is discoverable

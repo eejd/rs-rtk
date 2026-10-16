@@ -3432,7 +3432,7 @@ mod tests {
     }
 
     #[test]
-    fn test_claude_shell_wrapper_rewrites_without_auto_allow() {
+    fn test_claude_shell_wrapper_rewrite_asserts_allow_with_updated_input() {
         let result = run_claude_inner(&claude_input(r#"bash -c "head foo && grep -R bar .""#))
             .expect("wrapper rewrite expected");
         let v: Value = serde_json::from_str(&result).unwrap();
@@ -3441,7 +3441,8 @@ mod tests {
             output["updatedInput"]["command"],
             r#"bash -c "rtk read foo --head-lines 10 && rtk grep -R bar .""#
         );
-        assert!(output.get("permissionDecision").is_none());
+        // Claude rejects updatedInput unless the hook explicitly allows it.
+        assert_eq!(output["permissionDecision"], "allow");
     }
 
     #[test]
