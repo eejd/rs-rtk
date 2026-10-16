@@ -708,9 +708,13 @@ fn process_claude_payload_from_decision(
         HookDecision::AskRewrite(r) => (r, false),
     };
 
+    // Claude Code rejects `updatedInput` unless the hook explicitly allows it, so
+    // both AllowRewrite and AskRewrite assert protocol-level `allow`. The logged
+    // outcome stays Ask for the Default/explicit-Ask verdicts: it is not an RTK
+    // auto-approval of the command (local patch, see UPSTREAM.md).
     PayloadAction::Rewrite {
         cmd: cmd.to_string(),
-        output: pre_tool_use_rewrite_output(v, &rewritten, allow.then_some("allow")),
+        output: pre_tool_use_rewrite_output(v, &rewritten, Some("allow")),
         rewritten,
         decision: if allow {
             HookOutcome::Allow
@@ -1978,7 +1982,15 @@ mod tests {
             "git status",
             HookDecision::AskRewrite("rtk git status".to_string()),
         ) {
-            PayloadAction::Rewrite { decision, .. } => assert_eq!(decision, HookOutcome::Ask),
+            PayloadAction::Rewrite {
+                decision, output, ..
+            } => {
+                assert_eq!(decision, HookOutcome::Ask);
+                // updatedInput is never emitted without an explicit allow.
+                let hook = &output["hookSpecificOutput"];
+                assert!(hook["updatedInput"].is_object());
+                assert_eq!(hook["permissionDecision"], "allow");
+            }
             other => {
                 panic!("expected Rewrite, got a different PayloadAction variant instead: {other:?}")
             }
@@ -2138,8 +2150,8 @@ mod tests {
         let hook = &v["hookSpecificOutput"];
 
         assert_eq!(hook["hookEventName"], PRE_TOOL_USE_KEY);
-        // permissionDecision is only set when an explicit allow rule matches;
-        // with default-to-ask semantics (no rules configured), it is absent.
+        // Claude rejects updatedInput unless the hook explicitly allows it.
+        assert_eq!(hook["permissionDecision"], "allow");
         assert_eq!(hook["permissionDecisionReason"], "RTK auto-rewrite");
         assert!(hook["updatedInput"].is_object());
         assert!(hook["updatedInput"]["command"].is_string());

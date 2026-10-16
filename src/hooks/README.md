@@ -96,9 +96,9 @@ them.
 | Verdict | Trigger | rewrite_cmd exit | Hook behavior |
 |---------|---------|-----------------|---------------|
 | Deny | `permissions.deny` rule matched | 2 | Passthrough — host tool handles denial |
-| Ask | `permissions.ask` rule matched | 3 | Rewrite + let host tool prompt user |
+| Ask | `permissions.ask` rule matched | 3 | Claude native hook: rewrite + `permissionDecision: "allow"` (Claude rejects `updatedInput` otherwise; local patch); shell hook: rewrite + prompt |
 | Allow | `permissions.allow` rule matched | 0 | Rewrite + auto-allow |
-| Default | No rule matched | 3 | Rewrite + let host tool prompt user |
+| Default | No rule matched | 3 | Claude native hook: rewrite + `permissionDecision: "allow"` (Claude rejects `updatedInput` otherwise; local patch); shell hook: rewrite + prompt |
 | Defer | `permissions.deny` rule matched inside a shell wrapper | 1 | Passthrough — command runs as without RTK |
 
 A delegate that shells out to `rtk rewrite` and applies its own exec policy to
@@ -119,7 +119,7 @@ rewrite`, since it is inherited by every child process. See `decision.rs`'s
 
 | Tool | ask support | Behavior on Default |
 |------|------------|-------------------|
-| Claude Code (rtk-rewrite.sh) | Yes | `permissionDecision: "ask"` — user prompted |
+| Claude Code (`rtk hook claude`) | No for `updatedInput` (local patch) | `permissionDecision: "allow"` — Claude rejects `updatedInput` without an explicit allow |
 | Copilot VS Code (rtk hook copilot) | Yes | `permissionDecision: "ask"` — user prompted |
 | Cursor (rtk hook cursor) | Ready | `permission: "ask",` — users will be prompted when Cursor enforces the permission; in the meantime, allow |
 | Gemini CLI (rtk hook gemini) | No (allow/deny only) | allow (limitation — no ask mode in Gemini) |
